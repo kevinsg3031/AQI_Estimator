@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AQI Lens — India Air Quality</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:       #0c0e14;
+  --surface:  #13151f;
+  --surface2: #1a1d2b;
+  --surface3: #20243a;
+  --border:   #252840;
+  --border2:  #2e3354;
+  --text:     #e4e7f0;
+  --text2:    #9097b0;
+  --text3:    #5c6280;
+  --blue:     #4f7cff;
+  --blue-dim: rgba(79,124,255,0.12);
+  --purple:   #9b72f5;
+  --r: 10px;
+  --r-sm: 6px;
+}
+
+body.light {
+  --bg:       #f5f7fb;
+  --surface:  #ffffff;
+  --surface2: #f3f5fa;
+  --surface3: #e7ebf4;
+  --border:   #d7dce7;
+  --border2:  #c9d1df;
+  --text:     #1f2937;
+  --text2:    #4b5563;
+  --text3:    #6b7280;
+  --blue:     #2563eb;
+  --blue-dim: rgba(37,99,235,0.10);
+  --purple:   #7c3aed;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* ── NAV ─────────────────────────────────────────────────────── */
+nav {
+  display: flex;
+  align-items: center;
+  padding: 0 32px;
+  height: 56px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  gap: 32px;
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--text);
+  flex-shrink: 0;
+}
+
+.nav-brand .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--blue);
+  box-shadow: 0 0 8px var(--blue);
+}
+
+.nav-links {
+  display: flex;
+  gap: 2px;
+  flex: 1;
+}
+
+.nav-link {
+  padding: 6px 14px;
+  border-radius: var(--r-sm);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text2);
+  cursor: pointer;
+  border: none;
+  background: none;
+  transition: all 0.15s;
+}
+
+.nav-link:hover { color: var(--text); background: var(--surface2); }
+.nav-link.active { color: var(--text); background: var(--surface2); }
+
+.nav-pill {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text2);
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  padding: 4px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.theme-btn {
+  margin-left: 12px;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid var(--border2);
+  background: var(--surface2);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.2s ease;
+}
+
+.theme-btn:hover {
+  border-color: var(--blue);
+}
+
+/* ── LAYOUT ──────────────────────────────────────────────────── */
+.page { display: none; max-width: 1080px; margin: 0 auto; padding: 32px 32px 64px; }
+.page.active { display: block; }
+
+.row { display: grid; gap: 16px; }
+.row-2 { grid-template-columns: 1fr 1fr; }
+.row-3 { grid-template-columns: 1fr 1fr 1fr; }
+.row-side { grid-template-columns: 340px 1fr; }
+
+@media (max-width: 768px) {
+  nav { padding: 0 16px; gap: 16px; }
+  .page { padding: 20px 16px 48px; }
+  .row-2, .row-3, .row-side { grid-template-columns: 1fr; }
+}
+
+/* ── CARDS ───────────────────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 20px;
+}
+
+.leaderboard-grid{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:20px;
+  margin-bottom:24px;
+}
+
+@media(max-width:900px){
+  .leaderboard-grid{
+    grid-template-columns:1fr;
+  }
+}
+
+.card-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 14px;
+}
+
+/* ── PAGE HEADER ─────────────────────────────────────────────── */
+.page-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.page-sub {
+  color: var(--text2);
+  font-size: 13px;
+  margin-bottom: 28px;
+}
+
+/* ── SEARCH ──────────────────────────────────────────────────── */
+.search-wrap {
+  position: relative;
+}
+
+.search-wrap input {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: var(--r);
+  padding: 12px 16px 12px 44px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.search-wrap input:focus { border-color: var(--blue); }
+.search-wrap input::placeholder { color: var(--text3); }
+
+.search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text3);
+  pointer-events: none;
+}
+
+.search-btn {
+  width: 100%;
+  margin-top: 10px;
+  padding: 11px;
+  background: var(--blue);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  border: none;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.empty-illustration{
+    width:220px;
+    height:auto;
+    display:block;
+    margin:0 auto -40px;
+}
+
+.result-empty{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:16px;
+    text-align:center;
+}
+.search-btn:hover { opacity: 0.88; }
+.search-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.status-line {
+  font-size: 12px;
+  color: var(--text3);
+  margin-top: 8px;
+  min-height: 18px;
+}
+
+/* ── RESULT CARD ─────────────────────────────────────────────── */
+.result-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 48px 24px;
+  color: var(--text3);
+  text-align: center;
+  border: 1px dashed var(--border2);
+  border-radius: var(--r);
+}
+
+.result-empty .icon { font-size: 32px; opacity: 0.4; }
+
+.aqi-result {
+  padding: 24px;
+  border-radius: var(--r);
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.aqi-result .place-name {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.aqi-result .place-sub {
+  font-size: 12px;
+  color: var(--text2);
+  margin-bottom: 20px;
+}
+
+.aqi-number-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.aqi-big {
+  font-size: 52px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.aqi-label-pill {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+.weather-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.wpill {
+  font-size: 12px;
+  color: var(--text2);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  padding: 4px 10px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.result-note {
+  font-size: 11px;
+  color: var(--text3);
+  line-height: 1.6;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+/* ── AQI BADGE (inline) ──────────────────────────────────────── */
+.aqi-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 13px;
+}
+.aqi-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+/* ── STAT BLOCKS ─────────────────────────────────────────────── */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 768px) { .stats-row { grid-template-columns: 1fr 1fr; } }
+
+.stat-block {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 16px 18px;
+}
+
+.stat-block .num {
+  font-size: 30px;
+  font-weight: 800;
+  color: var(--blue);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.stat-block .lbl {
+  font-size: 11px;
+  color: var(--text3);
+  font-weight: 500;
+}
+
+/* ── TABLES ──────────────────────────────────────────────────── */
+table { width: 100%; border-collapse: collapse; }
+th {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text3);
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+td { padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 13px; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--surface2); }
+
+/* ── FEATURE BARS ────────────────────────────────────────────── */
+.fi-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.fi-name { font-size: 12px; color: var(--text2); width: 130px; flex-shrink: 0; font-family: 'Courier New', monospace; }
+.fi-track { flex: 1; height: 6px; background: var(--surface3); border-radius: 3px; overflow: hidden; }
+.fi-fill { height: 100%; background: linear-gradient(90deg, var(--blue), var(--purple)); border-radius: 3px; transition: width 0.7s cubic-bezier(.16,1,.3,1); }
+.fi-num { font-size: 11px; color: var(--text3); width: 34px; text-align: right; flex-shrink: 0; }
+
+/* ── COMPARE SELECTS ─────────────────────────────────────────── */
+.compare-controls {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  margin-bottom: 20px;
+}
+
+.cmp-field label {
+  display: block;
+  font-size: 11px;
+  color: var(--text3);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+
+.cmp-field select {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+  padding: 8px 12px;
+  border-radius: var(--r-sm);
+  outline: none;
+  min-width: 150px;
+}
+
+.cmp-btn {
+  padding: 9px 18px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.cmp-btn:hover { border-color: var(--blue); color: var(--blue); }
+
+/* ── HOLDOUT TAG ─────────────────────────────────────────────── */
+.holdout-tag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--purple);
+  background: rgba(155, 114, 245, 0.12);
+  border: 1px solid rgba(155, 114, 245, 0.25);
+  padding: 2px 7px;
+  border-radius: 20px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+/* ── DIVIDER ─────────────────────────────────────────────────── */
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: 24px 0;
+}
+
+/* ── PROSE ───────────────────────────────────────────────────── */
+.prose { font-size: 14px; color: var(--text2); line-height: 1.75; }
+.prose strong { color: var(--text); font-weight: 600; }
+.prose + .prose { margin-top: 12px; }
+
+/* ── SECTION TITLE ───────────────────────────────────────────── */
+.section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 16px;
+}
+
+.section-sub {
+  font-size: 12px;
+  color: var(--text3);
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+
+/* ── CANVAS ──────────────────────────────────────────────────── */
+canvas { max-height: 280px; }
+
+/* ── SCROLLBAR ───────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">
+    <span class="dot"></span>
+    AQI Lens
+  </div>
+  <div class="nav-links">
+    <button class="nav-link active" onclick="showTab('predict',this)">Predict</button>
+    <button class="nav-link" onclick="showTab('compare',this)">Compare</button>
+    <button class="nav-link" onclick="showTab('explain',this)">Explain</button>
+    <button class="nav-link" onclick="showTab('about',this)">About</button>
+  </div>
+  <div class="nav-pill" id="headerBadge">Loading…</div>
+  <button id="themeToggle" class="theme-btn">🌙</button>
+</nav>
+
+<!-- ═══════════════════ TAB 1: PREDICT ═══════════════════════ -->
+<div class="page active" id="tab-predict">
+  <div class="page-title">Search any Indian location</div>
+  <div class="page-sub">Live AQI from Open-Meteo pollutant data · Seasonal baseline from the ML model</div>
+  <div class="card" style="margin-bottom:24px">
+  <div class="leaderboard-grid">
+  <div class="card">
+    <div class="card-label">🌿 Cleanest Major Cities</div>
+    <table id="cleanLeaderboard">
+      <thead>
+        <tr>
+          <th>City</th>
+          <th>AQI</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td colspan="2">Loading...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="card-label">❗ Most Polluted Major Cities</div>
+    <table id="pollutedLeaderboard">
+      <thead>
+        <tr>
+          <th>City</th>
+          <th>AQI</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td colspan="2">Loading...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+  <div class="row row-side">
+
+    <!-- Left: search panel -->
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="card">
+        <div class="card-label">Location</div>
+        <div class="search-wrap">
+          <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="text" id="placeInput" placeholder="e.g. Nagpur, Coimbatore, Surat…" onkeydown="if(event.key==='Enter') predictPlace()">
+        </div>
+        <button class="search-btn" id="placeButton" onclick="predictPlace()">Get AQI</button>
+        <div class="status-line" id="placeStatus"></div>
+      </div>
+
+      <div class="card" id="forecastCard" style="display:none">
+        <div class="card-label">7-Day Forecast</div>
+        <canvas id="forecastChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Right: result -->
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="result-empty" id="resultEmpty">
+      <img
+        src="images/aqi-search.png"
+        
+        class="empty-illustration"
+      >
+      <span>Search a city to see its current air quality</span>
+    </div>
+
+      <div class="aqi-result" id="aqiResult" style="display:none">
+        <div class="place-name" id="customCityName"></div>
+        <div class="place-sub" id="customMeta"></div>
+        <div class="aqi-number-row">
+          <div class="aqi-big" id="aqiBigNum"></div>
+          <div class="aqi-label-pill" id="aqiLabelPill"></div>
+        </div>
+        <div class="weather-pills" id="weatherPills"></div>
+        <div class="result-note" id="customNote"></div>
+      </div>
+
+      <div class="card" id="baselineCard" style="display:none">
+        <div class="card-label">Typical Monthly Baseline</div>
+        <div class="section-sub" id="baselineDescription">ML seasonal estimate — not a live forecast.</div>
+        <canvas id="baselineChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════ TAB 2: COMPARE ══════════════════════ -->
+<div class="page" id="tab-compare">
+  <div class="page-title">Compare cities</div>
+  <div class="page-sub">Monthly AQI trend using real CPCB observations where available</div>
+
+  <div class="compare-controls" id="compareSelects"></div>
+
+  <div class="card" style="margin-bottom:16px">
+    <canvas id="compareChart" style="max-height:340px"></canvas>
+  </div>
+
+  <div class="card">
+    <div class="card-label" id="rankTableTitle">Annual average AQI · all cities</div>
+    <table id="rankTable">
+      <thead>
+        <tr>
+          <th>#</th><th>City</th><th>State</th><th>Region</th>
+          <th>Avg AQI</th><th>Type</th><th>Category</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════════════ TAB 3: EXPLAIN ══════════════════════ -->
+<div class="page" id="tab-explain">
+  <div class="page-title">How the model works</div>
+  <div class="page-sub" id="explainIntro">Loading model information…</div>
+
+  <div class="row row-2" style="margin-bottom:16px">
+    <div class="card">
+      <div class="section-title">Feature importance</div>
+      <div class="section-sub">
+        Permutation importance computed on holdout cities — how much does MAE rise when each feature is randomly shuffled?
+        Features with positive values hurt performance when removed; negative values indicate the model is better off without them on unseen cities.
+      </div>
+      <div id="fiBars"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Industrial load effect</div>
+      <div class="section-sub">
+        Partial dependence plot — predicted AQI as industrial index rises with all other features fixed.
+        This is the key signal the model uses to generalise across cities.
+      </div>
+      <canvas id="pdpChart"></canvas>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:16px">
+    <div class="section-title">Holdout city validation</div>
+    <div class="section-sub" id="valDesc">
+      Actual CPCB annual-average AQI vs model prediction for cities excluded from training entirely.
+    </div>
+    <canvas id="valChart" style="max-height:260px"></canvas>
+  </div>
+
+  <div class="card">
+    <div class="section-title">Methodology</div>
+    <p class="prose" id="methodologyText"></p>
+  </div>
+</div>
+
+<!-- ═══════════════════ TAB 4: ABOUT ════════════════════════ -->
+<div class="page" id="tab-about">
+  <div class="page-title">About this project</div>
+  <div class="page-sub">What it does, how it was built, and why the approach matters</div>
+
+  <div class="stats-row">
+    <div class="stat-block">
+      <div class="num" id="statMAE">—</div>
+      <div class="lbl">MAE on unseen cities (AQI pts)</div>
+    </div>
+    <div class="stat-block">
+      <div class="num" id="statTrainCities">—</div>
+      <div class="lbl">Training cities</div>
+    </div>
+    <div class="stat-block">
+      <div class="num" id="statHoldoutCities">—</div>
+      <div class="lbl">Holdout cities</div>
+    </div>
+    <div class="stat-block">
+      <div class="num" id="statDateRange">—</div>
+      <div class="lbl">Data period</div>
+    </div>
+  </div>
+
+  <div class="row row-2" style="margin-bottom:16px">
+    <div class="card">
+      <div class="section-title">The problem</div>
+      <p class="prose">
+        India's CPCB monitors air quality in major cities, but <strong>hundreds of smaller towns have no monitoring stations</strong>.
+        Standard ML approaches train a separate model per city — which requires historical data for each city, defeating the purpose.
+      </p>
+      <div class="divider"></div>
+      <div class="section-title">The approach</div>
+      <p class="prose">
+        This project uses <strong>Option B: pooled regression with location features</strong> — a single model trained on 13 cities
+        that learns the relationship between a city's structural characteristics (industrial load, population density, region, coastal proximity)
+        and its AQI. That learned relationship is then applied to cities the model has never seen.
+      </p>
+      <div class="divider"></div>
+      <div class="section-title">Why city-level holdout matters</div>
+      <p class="prose">
+        A random 80/20 train-test split would let the model see 95% of Delhi's data in training and test on the remaining 5% —
+        that measures memorisation, not generalisation. <strong>Holding out entire cities</strong> forces the model to predict
+        from structure alone, which is the actual problem being solved.
+      </p>
+    </div>
+
+    <div>
+      <div class="card" style="margin-bottom:16px">
+        <div class="section-title">Features used</div>
+        <table id="featuresTable">
+          <thead><tr><th>Feature</th><th>Why it matters</th></tr></thead>
+          <tbody id="featuresTableBody"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="section-title">Stack</div>
+        <table>
+          <tbody>
+            <tr><td style="color:var(--text3);width:120px">Model</td><td id="techModel">—</td></tr>
+            <tr><td style="color:var(--text3)">AQI data</td><td id="techData">—</td></tr>
+            <tr><td style="color:var(--text3)">Weather</td><td>Open-Meteo historical archive</td></tr>
+            <tr><td style="color:var(--text3)">Live forecast</td><td>Open-Meteo air quality API</td></tr>
+            <tr><td style="color:var(--text3)">Explainability</td><td>Permutation importance + partial dependence</td></tr>
+            <tr><td style="color:var(--text3)">App</td><td>Standalone HTML — no server needed</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let DATA = null;
+const LIVE_CITIES = [
+  { name: "Delhi", lat: 28.61, lon: 77.21 },
+  { name: "Mumbai", lat: 19.07, lon: 72.88 },
+  { name: "Kolkata", lat: 22.57, lon: 88.36 },
+  { name: "Chennai", lat: 13.08, lon: 80.27 },
+  { name: "Bengaluru", lat: 12.97, lon: 77.59 },
+  { name: "Hyderabad", lat: 17.38, lon: 78.48 },
+  { name: "Ahmedabad", lat: 23.03, lon: 72.58 },
+  { name: "Lucknow", lat: 26.85, lon: 80.95 },
+  { name: "Jaipur", lat: 26.91, lon: 75.79 },
+  { name: "Pune", lat: 18.52, lon: 73.85 }
+];
+// ── load ──────────────────────────────────────────────────────
+async function loadData() {
+  try {
+    const r = await fetch('model_data.json');
+    DATA = await r.json();
+  } catch(e) {
+    document.body.innerHTML = '<div style="padding:60px;text-align:center;color:#9097b0">Could not load model_data.json.<br><br>Run: <code>cd app && python3 -m http.server 8000</code></div>';
+    return;
+  }
+  init();
+}
+
+// ── AQI helpers ───────────────────────────────────────────────
+function aqiCategory(v) {
+  if (v <= 50)  return { label:'Good',        color:'#22c55e' };
+  if (v <= 100) return { label:'Satisfactory', color:'#4ade80' };
+  if (v <= 200) return { label:'Moderate',     color:'#facc15' };
+  if (v <= 300) return { label:'Poor',         color:'#fb923c' };
+  if (v <= 400) return { label:'Very Poor',    color:'#f87171' };
+  return              { label:'Severe',        color:'#c084fc' };
+}
+
+function monthColors(arr) {
+  return (arr || []).map(v => Number.isFinite(v) ? aqiCategory(v).color + 'cc' : '#2e3354');
+}
+
+function cityData(city) {
+  const real = DATA.city_monthly_real?.[city];
+  return (real && real.some(v => v != null)) ? real : DATA.city_monthly_aqi?.[city];
+}
+
+// ── tabs ──────────────────────────────────────────────────────
+function showTab(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-link').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  if (id === 'compare') renderCompare();
+  if (id === 'explain') renderExplain();
+}
+
+// ── init ──────────────────────────────────────────────────────
+const set = (id, v) => { const el = document.getElementById(id); if (el && v != null) el.textContent = v; };
+
+const FEAT_DESC = {
+  is_coastal:          'Sea-breeze dispersal reduces pollutant accumulation.',
+  latitude:            'Northern cities face harsher winters and different emission patterns.',
+  longitude:           'East–west variation in industrialisation and geography.',
+  precipitation_mm:    'Rainfall directly washes out airborne particles.',
+  month_cos:           'Cyclical seasonality encoding (pairs with month_sin).',
+  month_sin:           'Cyclical seasonality encoding (pairs with month_cos).',
+  pressure_hpa:        'High-pressure systems trap pollutants near the surface.',
+  region:              'Broad geographic zone encoding climate and industrial character.',
+  temperature_c:       'Affects atmospheric mixing and secondary pollutant chemistry.',
+  humidity_pct:        'Influences hygroscopic particle growth and aerosol formation.',
+  wind_speed_kmh:      'Higher winds disperse pollutants away from the source.',
+  industrial_index:    'Continuous 0–1 industrial emission intensity score.',
+  population_density:  'Proxy for traffic density, cooking smoke, and urban activity.',
+  is_diwali_window:    'Firecracker combustion spike mid-Oct to early Nov.',
+  is_winter:           'Winter inversions trap pollution; North India stubble burning.',
+  is_monsoon:          'Monsoon rain provides sustained washout (Jun–Sep).',
+  day_of_year:         'Fine-grained seasonal signal beyond monthly encoding.',
+};
+
+function init() {
+  const s = DATA.model_stats || {};
+
+  // Nav pill
+  const mae = s.unseen_city_mae != null ? Math.round(s.unseen_city_mae) : '?';
+  document.getElementById('headerBadge').textContent = `MAE ${mae} · ${s.date_range || ''}`;
+
+  // About stats
+  set('statMAE',          s.unseen_city_mae != null ? Math.round(s.unseen_city_mae) : '—');
+  set('statTrainCities',  s.train_cities ?? '—');
+  set('statHoldoutCities',s.holdout_cities ?? '—');
+  set('statDateRange',    s.date_range ?? '—');
+  set('techModel',        s.best_model ?? '—');
+  set('techData',         s.data_source ?? '—');
+
+  // Features table from explainability data
+  const exp = DATA.explainability;
+  if (exp?.feature_importance) {
+    document.getElementById('featuresTableBody').innerHTML =
+      exp.feature_importance.map(f => `
+        <tr>
+          <td style="font-family:monospace;font-size:12px;color:var(--text2)">${f.feature}</td>
+          <td style="color:var(--text3);font-size:12px">${FEAT_DESC[f.feature] || ''}</td>
+        </tr>`).join('');
+  }
+
+  // Explain tab text
+  const trainN = s.train_cities ?? '?', holdN = s.holdout_cities ?? '?';
+  const maeVal = s.unseen_city_mae != null ? Math.round(s.unseen_city_mae) : '?';
+  set('explainIntro', `${s.best_model ?? 'Model'} · ${trainN} training cities · ${holdN} holdout cities · MAE ${maeVal} AQI pts · ${s.data_source ?? ''} · ${s.date_range ?? ''}`);
+  set('valDesc', `Annual-average AQI for the ${holdN} holdout cities: actual CPCB data vs model prediction. These cities were excluded entirely from training.`);
+  set('methodologyText',
+    `Trained on ${trainN} Indian cities using ${s.date_range ?? 'historical'} CPCB AQI data, merged with daily weather from Open-Meteo and city metadata (population density, industrial index, coastal flag, region). A city-level holdout was used: ${holdN} cities were excluded from all training and used only for evaluation, testing cross-city generalisation rather than within-city time-series prediction. Best model: ${s.best_model ?? '—'}.`);
+
+  buildCompareSelects();
+  loadLiveLeaderboard();
+}
+
+// ── TAB 1: PREDICT ────────────────────────────────────────────
+let forecastChart = null, baselineChart = null;
+
+function makeBarChart(canvasId, labels, values, existing) {
+  if (existing) existing.destroy();
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return null;
+  return new Chart(canvas.getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{ data: values, backgroundColor: monthColors(values), borderRadius: 4 }]
+    },
+    options: {
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ` AQI ${Math.round(ctx.raw)} — ${aqiCategory(ctx.raw).label}` } }
+      },
+      scales: {
+        y: { grid: { color: '#252840' }, ticks: { color: '#5c6280', font: { size: 11 } }, beginAtZero: true, max: 500 },
+        x: { grid: { display: false }, ticks: { color: '#5c6280', font: { size: 11 } } }
+      }
+    }
+  });
+}
+
+const REGION_STATES = {
+  North:['Delhi','Haryana','Himachal Pradesh','Jammu and Kashmir','Punjab','Rajasthan','Uttar Pradesh','Uttarakhand'],
+  South:['Andhra Pradesh','Karnataka','Kerala','Tamil Nadu','Telangana'],
+  East:['Bihar','Jharkhand','Odisha','West Bengal'],
+  West:['Goa','Gujarat','Maharashtra'],
+  Central:['Chhattisgarh','Madhya Pradesh'],
+  Northeast:['Arunachal Pradesh','Assam','Manipur','Meghalaya','Mizoram','Nagaland','Sikkim','Tripura']
+};
+function regionForState(s='') {
+  return Object.keys(REGION_STATES).find(r => REGION_STATES[r].some(st => s.includes(st))) || 'Central';
+}
+function haversineKm(lat1,lon1,lat2,lon2) {
+  const R=6371, r=x=>x*Math.PI/180;
+  const a=Math.sin(r(lat2-lat1)/2)**2+Math.cos(r(lat1))*Math.cos(r(lat2))*Math.sin(r(lon2-lon1)/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+function similarCities(lat,lon,region,ind,n=8) {
+  const ranked = DATA.city_meta.filter(c=>!c.is_holdout&&cityData(c.city)).map(c=>{
+    const km=haversineKm(lat,lon,c.latitude,c.longitude);
+    const score=km/500+Math.abs(c.industrial_index-ind)/0.25+(c.region===region?0:1.5);
+    return {city:c,score};
+  }).sort((a,b)=>a.score-b.score).slice(0,n);
+  const raw=ranked.map(x=>1/Math.max(x.score,0.15));
+  const tot=raw.reduce((a,b)=>a+b,0);
+  return ranked.map((x,i)=>({...x,weight:raw[i]/tot}));
+}
+function weightedBaseline(matches) {
+  return Array.from({length:12},(_,m)=>{
+    const av=matches.filter(x=>Number.isFinite(cityData(x.city.city)?.[m]));
+    const wt=av.reduce((s,x)=>s+x.weight,0);
+    return av.reduce((s,x)=>s+cityData(x.city.city)[m]*x.weight,0)/wt;
+  });
+}
+function cpcbSub(v,bp) {
+  if (!Number.isFinite(v)) return null;
+  for (const [cl,ch,il,ih] of bp) if (v<=ch) return il+(v-cl)*(ih-il)/(ch-cl);
+  return 500;
+}
+function indiaAqi(p) {
+  const idx=[
+    cpcbSub(p.pm2_5,[[0,30,0,50],[30,60,51,100],[60,90,101,200],[90,120,201,300],[120,250,301,400],[250,500,401,500]]),
+    cpcbSub(p.pm10,[[0,50,0,50],[50,100,51,100],[100,250,101,200],[250,350,201,300],[350,430,301,400],[430,600,401,500]]),
+    cpcbSub(p.nitrogen_dioxide,[[0,40,0,50],[40,80,51,100],[80,180,101,200],[180,280,201,300],[280,400,301,400],[400,800,401,500]]),
+    cpcbSub(p.ozone,[[0,50,0,50],[50,100,51,100],[100,168,101,200],[168,208,201,300],[208,748,301,400],[748,1000,401,500]])
+  ].filter(Number.isFinite);
+  return idx.length ? Math.max(...idx) : null;
+}
+async function loadLiveLeaderboard() {
+  const results = [];
+
+  for (const city of LIVE_CITIES) {
+    try {
+      const url =
+        `https://air-quality-api.open-meteo.com/v1/air-quality` +
+        `?latitude=${city.lat}` +
+        `&longitude=${city.lon}` +
+        `&current=pm2_5,pm10,nitrogen_dioxide,ozone`;
+
+      const data = await fetch(url).then(r => r.json());
+
+      const aqi = indiaAqi(data.current);
+
+      if (aqi !== null) {
+        results.push({
+          city: city.name,
+          aqi
+        });
+      }
+    } catch (e) {
+      console.error(city.name, e);
+    }
+  }
+
+  results.sort((a, b) => b.aqi - a.aqi);
+  const polluted = results.slice(0,5);
+  const clean = [...results]
+    .sort((a,b)=>a.aqi-b.aqi)
+    .slice(0,5);
+
+  document.querySelector('#pollutedLeaderboard tbody').innerHTML =
+  polluted.map(city => `
+    <tr>
+      <td>${city.city}</td>
+      <td>${Math.round(city.aqi)}</td>
+    </tr>
+  `).join('');
+
+document.querySelector('#cleanLeaderboard tbody').innerHTML =
+  clean.map(city => `
+    <tr>
+      <td>${city.city}</td>
+      <td>${Math.round(city.aqi)}</td>
+    </tr>
+  `).join('');
+}
+function rollAvg(vals,end,h) {
+  const w=vals.slice(Math.max(0,end-h+1),end+1).filter(Number.isFinite);
+  return w.length?w.reduce((a,b)=>a+b)/w.length:null;
+}
+function avgPollutants(air) {
+  const end=Math.max(0,air.hourly.time.findLastIndex(t=>t<=air.current.time));
+  return {
+    pm2_5:rollAvg(air.hourly.pm2_5,end,24),
+    pm10:rollAvg(air.hourly.pm10,end,24),
+    nitrogen_dioxide:rollAvg(air.hourly.nitrogen_dioxide,end,24),
+    sulphur_dioxide:rollAvg(air.hourly.sulphur_dioxide,end,24),
+    carbon_monoxide:rollAvg(air.hourly.carbon_monoxide,end,24),
+    ozone:rollAvg(air.hourly.ozone,end,8)
+  };
+}
+function dailyForecast(air) {
+  const today=air.current.time.slice(0,10);
+  const days=[...new Set(air.hourly.time.map(t=>t.slice(0,10)).filter(d=>d>=today))].slice(0,7);
+  const vals=days.map(day=>{
+    const ix=air.hourly.time.map((t,i)=>t.startsWith(day)?i:-1).filter(i=>i>=0);
+    const mean=k=>{const xs=ix.map(i=>air.hourly[k][i]).filter(Number.isFinite);return xs.length?xs.reduce((a,b)=>a+b)/xs.length:null;};
+    const oz=ix.map(i=>rollAvg(air.hourly.ozone,i,8)).filter(Number.isFinite);
+    return indiaAqi({pm2_5:mean('pm2_5'),pm10:mean('pm10'),nitrogen_dioxide:mean('nitrogen_dioxide'),ozone:Math.max(...oz)});
+  });
+  return {labels:days.map(d=>new Date(`${d}T12:00:00`).toLocaleDateString(undefined,{weekday:'short',day:'numeric'})),values:vals};
+}
+
+async function predictPlace() {
+  const q=document.getElementById('placeInput').value.trim();
+  const status=document.getElementById('placeStatus');
+  const btn=document.getElementById('placeButton');
+  if (!q){status.textContent='Enter a place name first.';return;}
+  btn.disabled=true; status.textContent='Finding place…';
+  try {
+    const geo=await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=10&language=en&format=json`).then(r=>r.json());
+    const place=(geo.results||[]).find(p=>p.country_code==='IN');
+    if(!place) throw new Error('No Indian location found — try a different spelling');
+    const {latitude:lat,longitude:lon}=place;
+    status.textContent='Fetching air quality data…';
+    const wURL=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,precipitation,surface_pressure,wind_speed_10m&timezone=auto`;
+    const pols='pm10,pm2_5,nitrogen_dioxide,ozone,carbon_monoxide,sulphur_dioxide';
+    const aURL=`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=${pols}&hourly=${pols}&past_days=1&forecast_days=7&timezone=auto`;
+    const [weath,air]=await Promise.all([fetch(wURL).then(r=>r.json()),fetch(aURL).then(r=>r.json())]);
+    if(!weath.current||!air.current||!air.hourly) throw new Error('Air quality data unavailable for this location');
+    const avg=avgPollutants(air);
+    const aqi=indiaAqi(avg);
+    if(aqi===null) throw new Error('Could not compute AQI — pollutant data unavailable');
+    const cat=aqiCategory(aqi);
+    const ind=Math.min(1,(avg.nitrogen_dioxide||0)/80*.55+(avg.sulphur_dioxide||0)/80*.25+(avg.carbon_monoxide||0)/2000*.20);
+    const region=regionForState(place.admin1||'');
+    const matches=similarCities(lat,lon,region,ind);
+    const forecast=dailyForecast(air);
+    const w=weath.current;
+
+    // Fill result card
+    document.getElementById('customCityName').textContent=`${place.name}${place.admin1?', '+place.admin1:''}`;
+    document.getElementById('customMeta').textContent=`${lat.toFixed(2)}°N ${lon.toFixed(2)}°E${place.population?' · Pop. '+Number(place.population).toLocaleString():''}`;
+    document.getElementById('aqiBigNum').textContent=Math.round(aqi);
+    document.getElementById('aqiBigNum').style.color=cat.color;
+    const pill=document.getElementById('aqiLabelPill');
+    pill.textContent=cat.label;
+    pill.style.background=cat.color+'22';
+    pill.style.color=cat.color;
+    pill.style.border=`1px solid ${cat.color}55`;
+
+    document.getElementById('weatherPills').innerHTML=[
+      ['🌡', `${w.temperature_2m}°C`],
+      ['💧', `${w.relative_humidity_2m}%`],
+      ['💨', `${w.wind_speed_10m} km/h`],
+      ['🌧', `${w.precipitation} mm`],
+      ['PM2.5', avg.pm2_5!=null?avg.pm2_5.toFixed(1)+'µg':'—'],
+      ['PM10',  avg.pm10!=null?avg.pm10.toFixed(1)+'µg':'—'],
+    ].map(([lbl,val])=>`<div class="wpill"><span style="opacity:.6">${lbl}</span>${val}</div>`).join('');
+
+    document.getElementById('customNote').textContent=
+      `CPCB-style estimate from 24h PM/NO₂ and 8h O₃ rolling averages. Industrial proxy: ${ind.toFixed(2)}. Not a regulatory reading.`;
+
+    document.getElementById('resultEmpty').style.display='none';
+    document.getElementById('aqiResult').style.display='block';
+
+    // Charts
+    document.getElementById('forecastCard').style.display='block';
+    forecastChart=makeBarChart('forecastChart',forecast.labels,forecast.values,forecastChart);
+
+    const baseline=weightedBaseline(matches);
+    document.getElementById('baselineCard').style.display='block';
+    baselineChart=makeBarChart('baselineChart',['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],baseline,baselineChart);
+    document.getElementById('baselineDescription').textContent=
+      `Weighted seasonal baseline using ${matches.length} similar cities: `+matches.map(m=>`${m.city.city} ${Math.round(m.weight*100)}%`).join(' · ')+'.';
+
+    status.textContent=`Updated ${new Date().toLocaleTimeString()}`;
+  } catch(e) {
+    status.textContent=`⚠ ${e.message}`;
+  } finally { btn.disabled=false; }
+}
+
+// ── TAB 2: COMPARE ────────────────────────────────────────────
+let cmpChart=null;
+
+function buildCompareSelects() {
+  const train=DATA.city_meta.filter(c=>!c.is_holdout).slice(0,2).map(c=>c.city);
+  const hold=DATA.city_meta.filter(c=>c.is_holdout).slice(0,2).map(c=>c.city);
+  const defs=[...train,...hold];
+  const opts=DATA.city_meta.map(c=>`<option value="${c.city}">${c.city}${c.is_holdout?' ★':''}</option>`).join('');
+  document.getElementById('compareSelects').innerHTML=
+    defs.map((d,i)=>`
+      <div class="cmp-field">
+        <label>City ${i+1}</label>
+        <select id="cmp${i}">${opts.replace(`value="${d}"`,`value="${d}" selected`)}</select>
+      </div>`).join('')+
+    `<div class="cmp-field" style="align-self:flex-end">
+       <button class="cmp-btn" onclick="renderCompare()">Update</button>
+     </div>`;
+  renderCompare();
+}
+
+function renderCompare() {
+  if(!DATA) return;
+  const colors=['#4f7cff','#9b72f5','#22c55e','#f97316'];
+  const cities=[0,1,2,3].map(i=>document.getElementById('cmp'+i)?.value).filter(Boolean);
+  if(new Set(cities).size!==cities.length){alert('Please select different cities.');return;}
+  const labels=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const ctx=document.getElementById('compareChart').getContext('2d');
+  if(cmpChart) cmpChart.destroy();
+  cmpChart=new Chart(ctx,{
+    type:'line',
+    data:{
+      labels,
+      datasets:cities.map((city,i)=>({
+        label:city+(DATA.city_meta.find(c=>c.city===city)?.is_holdout?' ★':''),
+        data:cityData(city)||[],
+        borderColor:colors[i],
+        backgroundColor:colors[i]+'18',
+        tension:0.4,fill:false,pointRadius:3,pointHoverRadius:5,borderWidth:2,
+      }))
+    },
+    options:{
+      plugins:{legend:{labels:{color:'#9097b0',font:{size:12},boxWidth:12}}},
+      scales:{
+        y:{grid:{color:'#1a1d2b'},ticks:{color:'#5c6280',font:{size:11}},beginAtZero:true},
+        x:{grid:{display:false},ticks:{color:'#5c6280',font:{size:11}}}
+      }
+    }
+  });
+
+  const rows=DATA.city_meta.map(c=>{
+    const d=cityData(c.city)||[];
+    const v=d.filter(Number.isFinite);
+    return {...c,avg:v.length?v.reduce((a,b)=>a+b)/v.length:0};
+  }).sort((a,b)=>a.avg-b.avg);
+
+  document.querySelector('#rankTable tbody').innerHTML=rows.map((c,i)=>{
+    const cat=aqiCategory(c.avg);
+    return `<tr>
+      <td style="color:var(--text3)">${i+1}</td>
+      <td><strong>${c.city}</strong>${c.is_holdout?'<span class="holdout-tag">holdout</span>':''}</td>
+      <td style="color:var(--text3)">${c.state}</td>
+      <td style="color:var(--text3)">${c.region}</td>
+      <td><span style="color:${cat.color};font-weight:700">${Math.round(c.avg)}</span></td>
+      <td style="color:var(--text3)">${c.is_coastal?'Coastal':'Inland'}</td>
+      <td><span style="color:${cat.color}">${cat.label}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── TAB 3: EXPLAIN ────────────────────────────────────────────
+let pdpChart=null,valChart=null;
+
+function renderExplain() {
+  const exp=DATA.explainability;
+  if(!exp){document.getElementById('fiBars').textContent='Run explainability.py then rebuild_app_json.py.';return;}
+
+  // Feature importance
+  const fi=exp.feature_importance||[];
+  const pos=fi.filter(f=>f.importance_mean>0);
+  const maxImp=Math.max(...fi.map(f=>Math.abs(f.importance_mean)),0.01);
+  document.getElementById('fiBars').innerHTML=fi.map(f=>{
+    const pct=(Math.abs(f.importance_mean)/maxImp*100).toFixed(0);
+    const color=f.importance_mean>=0?'var(--blue)':'#f87171';
+    return `<div class="fi-row">
+      <div class="fi-name">${f.feature}</div>
+      <div class="fi-track"><div class="fi-fill" style="width:${pct}%;background:${color}"></div></div>
+      <div class="fi-num" style="color:${color}">${f.importance_mean>=0?'+':''}${f.importance_mean.toFixed(2)}</div>
+    </div>`;
+  }).join('');
+
+  // PDP
+  const pdp=exp.partial_dependence?.industrial_index;
+  if(pdp){
+    const ctx=document.getElementById('pdpChart').getContext('2d');
+    if(pdpChart) pdpChart.destroy();
+    pdpChart=new Chart(ctx,{
+      type:'line',
+      data:{
+        labels:pdp.grid_values.map(v=>v.toFixed(2)),
+        datasets:[{
+          label:'Predicted AQI',
+          data:pdp.average,
+          borderColor:'#4f7cff',
+          backgroundColor:'rgba(79,124,255,0.08)',
+          tension:0.4,fill:true,pointRadius:0,borderWidth:2
+        }]
+      },
+      options:{
+        plugins:{legend:{display:false}},
+        scales:{
+          y:{grid:{color:'#1a1d2b'},ticks:{color:'#5c6280',font:{size:11}},title:{display:true,text:'Predicted AQI',color:'#5c6280',font:{size:11}}},
+          x:{grid:{display:false},ticks:{color:'#5c6280',font:{size:11},maxTicksLimit:6},title:{display:true,text:'Industrial index',color:'#5c6280',font:{size:11}}}
+        }
+      }
+    });
+  }
+
+  // Validation
+  const val=exp.validation||[];
+  if(val.length){
+    const ctx=document.getElementById('valChart').getContext('2d');
+    if(valChart) valChart.destroy();
+    valChart=new Chart(ctx,{
+      type:'bar',
+      data:{
+        labels:val.map(v=>v.city),
+        datasets:[
+          {label:'Actual AQI',data:val.map(v=>v.actual),backgroundColor:'rgba(34,197,94,0.5)',borderColor:'#22c55e',borderWidth:1,borderRadius:4},
+          {label:'Predicted AQI',data:val.map(v=>v.predicted),backgroundColor:'rgba(79,124,255,0.5)',borderColor:'#4f7cff',borderWidth:1,borderRadius:4},
+        ]
+      },
+      options:{
+        plugins:{legend:{labels:{color:'#9097b0',font:{size:12},boxWidth:12}},tooltip:{mode:'index',intersect:false}},
+        scales:{
+          y:{grid:{color:'#1a1d2b'},ticks:{color:'#5c6280',font:{size:11}},beginAtZero:true},
+          x:{grid:{display:false},ticks:{color:'#5c6280',font:{size:11}}}
+        }
+      }
+    });
+  }
+}
+
+const savedTheme = localStorage.getItem('theme');
+
+if (savedTheme === 'light') {
+  document.body.classList.add('light');
+}
+
+function updateThemeButton() {
+  const btn = document.getElementById('themeToggle');
+  if (!btn) return;
+
+  btn.textContent =
+    document.body.classList.contains('light')
+      ? '☀️'
+      : '🌙';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  updateThemeButton();
+
+  document.getElementById('themeToggle').addEventListener('click', () => {
+    document.body.classList.toggle('light');
+
+    localStorage.setItem(
+      'theme',
+      document.body.classList.contains('light')
+        ? 'light'
+        : 'dark'
+    );
+
+    updateThemeButton();
+  });
+});
+
+loadData();
+</script>
+</body>
+</html>

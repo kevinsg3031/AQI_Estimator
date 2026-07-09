@@ -1,0 +1,2 @@
+model,split,mae,rmse,r2
+KNeighbors,UNSEEN-cities-final,20.7434726915695,26.388670850576425,0.3730562213159957

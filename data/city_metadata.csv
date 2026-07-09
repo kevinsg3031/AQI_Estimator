@@ -1,0 +1,18 @@
+city,state,region,latitude,longitude,population_density,is_coastal,industrial_index,is_holdout
+Delhi,Delhi,North,28.61,77.21,11320,0,0.85,False
+Bengaluru,Karnataka,South,12.97,77.59,4400,0,0.22,False
+Kolkata,West Bengal,East,22.57,88.36,24200,0,0.58,False
+Chennai,Tamil Nadu,South,13.08,80.27,6700,1,0.28,False
+Hyderabad,Telangana,South,17.38,78.49,5500,0,0.38,False
+Lucknow,Uttar Pradesh,North,26.85,80.95,7300,0,0.48,False
+Jaipur,Rajasthan,North,26.91,75.79,7000,0,0.32,False
+Patna,Bihar,East,25.59,85.14,8100,0,0.42,False
+Chandigarh,Punjab,North,30.73,76.78,9200,0,0.32,False
+Amritsar,Punjab,North,31.63,74.87,7200,0,0.38,False
+Bhopal,Madhya Pradesh,Central,23.26,77.41,3800,0,0.38,False
+Guwahati,Assam,Northeast,26.14,91.73,4100,0,0.3,False
+Thiruvananthapuram,Kerala,South,8.52,76.94,4400,1,0.18,False
+Kochi,Kerala,South,9.93,76.27,6300,1,0.2,True
+Coimbatore,Tamil Nadu,South,11.02,76.96,3900,0,0.45,True
+Visakhapatnam,Andhra Pradesh,South,17.69,83.22,5200,1,0.48,True
+Mumbai,Maharashtra,West,19.08,72.88,20600,1,0.52,True
